@@ -30,6 +30,8 @@ class ReleaseExtension {
 
     boolean revertOnFail = true
 
+//    boolean publishToGit = true
+
     String preCommitText = ''
 
     String preTagCommitMessage = '[Gradle Release Plugin] - pre tag commit: '

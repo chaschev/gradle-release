@@ -51,6 +51,7 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
                 "${p}unSnapshotVersion" as String,
                 "${p}confirmReleaseVersion" as String,
                 "${p}checkSnapshotDependencies" as String,
+                "${p}updateResources" as String,
                 "${p}runBuildTasks" as String,
                 "${p}preTagCommit" as String,
                 "${p}createReleaseTag" as String,
@@ -81,6 +82,9 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
             description: 'Prompts user for this release version. Allows for alpha or pre releases.') doLast this.&confirmReleaseVersion
         project.task('checkSnapshotDependencies', group: RELEASE_GROUP,
             description: 'Checks to see if your project has any SNAPSHOT dependencies.') doLast this.&checkSnapshotDependencies
+
+        project.task('updateResources', group: RELEASE_GROUP,
+            description: 'Updates runtime resources required by the honey-mouth') doLast this.&updateResources
 
         project.task('runBuildTasks', group: RELEASE_GROUP,
             description: 'Runs the build process in a separate gradle run.', type: GradleBuild) {
@@ -120,13 +124,16 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
             project.tasks.unSnapshotVersion.mustRunAfter(project.tasks.checkoutMergeToReleaseBranch)
             project.tasks.confirmReleaseVersion.mustRunAfter(project.tasks.unSnapshotVersion)
             project.tasks.checkSnapshotDependencies.mustRunAfter(project.tasks.confirmReleaseVersion)
-            project.tasks.runBuildTasks.mustRunAfter(project.tasks.checkSnapshotDependencies)
+            project.tasks.updateResources.mustRunAfter(project.tasks.checkSnapshotDependencies)
+            project.tasks.runBuildTasks.mustRunAfter(project.tasks.updateResources)
             project.tasks.preTagCommit.mustRunAfter(project.tasks.runBuildTasks)
             project.tasks.createReleaseTag.mustRunAfter(project.tasks.preTagCommit)
             project.tasks.checkoutMergeFromReleaseBranch.mustRunAfter(project.tasks.createReleaseTag)
             project.tasks.updateVersion.mustRunAfter(project.tasks.checkoutMergeFromReleaseBranch)
             project.tasks.commitNewVersion.mustRunAfter(project.tasks.updateVersion)
         }
+
+        project.tasks.updateResources.dependsOn(project.tasks.createScmAdapter, project.tasks.initScmAdapter)
 
         project.task('beforeReleaseBuild', group: RELEASE_GROUP,
             description: 'Runs immediately before the build when doing a release') {}
@@ -214,6 +221,35 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
             message = "Snapshot dependencies detected: ${message}"
             warnOrThrow(extension.failOnSnapshotDependencies, message)
         }
+    }
+
+    void updateResources() {
+        def resourcesDir = project.file("src/main/resources")
+        def installKtsFile = new File(resourcesDir, "install.kts")
+        def installKts = installKtsFile.text
+
+        def revision = scmAdapter.getRevision()
+
+        installKts = installKts.replaceAll(/(appName\s+=\s+")[^"]*"/, "\$1${project.name}\"")
+        installKts = installKts.replaceAll(/(appVersion\s+=\s+")[^"]*"/, "\$1${project.version}\"")
+        installKts = installKts.replaceAll(/(revision\s+=\s+")[^"]*"/, "\$1${revision.substring(0, 6)}\"")
+        installKts = installKts.replaceAll(/(buildTime\s+=\s+Date\()\d+L/, "\$1${System.currentTimeMillis()}L")
+
+        installKtsFile.write(installKts)
+
+        def s = "# Repos\n"
+
+        project.repositories.toSet().each {
+            s += "${it.url}\n"
+        }
+
+        s += "# Artifacts\n"
+
+        project.configurations.compile.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            s += artifact.moduleVersion.toString() + "\n"
+        }
+
+        new File("src/main/resources/jars").write(s)
     }
 
     void commitTag() {

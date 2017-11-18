@@ -96,6 +96,12 @@ class GitAdapter extends BaseScmAdapter {
         }
     }
 
+
+    String getRevision() {
+        return exec(['git', 'log', '-n', '1', '--pretty=format:%H'], directory: workingDirectory, errorPatterns: ['error: ', 'fatal: ']).trim()
+    }
+
+
     @Override
     void checkUpdateNeeded() {
         exec(['git', 'remote', 'update'], directory: workingDirectory, errorPatterns: ['error: ', 'fatal: '])

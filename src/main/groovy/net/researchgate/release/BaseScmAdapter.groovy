@@ -39,6 +39,8 @@ abstract class BaseScmAdapter extends PluginHelper {
 
     abstract void revert()
 
+    String getRevision() { throw new UnsupportedOperationException("TODO")}
+
     void checkoutMergeToReleaseBranch() {
         throw new GradleException("Checkout and merge is supported only for GIT projects")
     }
