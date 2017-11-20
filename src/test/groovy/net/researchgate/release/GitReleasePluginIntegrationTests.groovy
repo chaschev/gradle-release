@@ -8,6 +8,8 @@
  * file that was distributed with this source code.
  */
 
+/*
+
 package net.researchgate.release
 
 import org.gradle.api.Project
@@ -63,3 +65,4 @@ class GitReleasePluginIntegrationTests extends GitSpecification {
         remoteGit.tagList().call().any { shortenRefName(it.name) == '1.1' }
     }
 }
+*/

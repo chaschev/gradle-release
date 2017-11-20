@@ -1,30 +1,44 @@
 buildscript {
   repositories {
     jcenter()
-    mavenLocal()
+
+    maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
+    maven { url 'https://raw.github.com/chaschev/kgit/repository' }
   }
   dependencies {
     classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.3.0'
     classpath 'nu.studer:gradle-plugindev-plugin:1.0.4'
     classpath 'org.codehaus.groovy:groovy-backports-compat23:2.4.6'
 //        classpath 'net.researchgate:gradle-release:2.3.5'
-    classpath 'net.researchgate:gradle-release:2.7.1-SNAPSHOT'
+    classpath 'net.researchgate:gradle-release:2.7.1'
+    classpath "honey:kgit:0.1.2"
+
   }
 }
 
 apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'nu.studer.plugindev'
-apply plugin: 'com.jfrog.artifactory'
+//apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'net.researchgate.release'
 
 group = 'net.researchgate'
 
 dependencies {
+  compile "honey:kgit:0.1.2"
+
   testCompile("org.spockframework:spock-core:$spockVersion") { exclude group: 'org.codehaus.groovy' }
   testCompile "junit:junit:$junitVersion"
   testCompile "org.eclipse.jgit:org.eclipse.jgit:$jgitVersion"
   testCompile "cglib:cglib-nodep:$cglibVersion"
+}
+
+repositories {
+  mavenCentral()
+  jcenter()
+  maven { url 'https://raw.github.com/chaschev/kgit/repository' }
+  maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
+
 }
 
 plugindev {
@@ -54,11 +68,15 @@ jar.dependsOn(patchStupidGradle)
 
 release {
   git {
+    publishToGit = true
+
+    gitRepoUrl = "https://github.com/chaschev/gradle-release.git"
+
     requireBranch = '(master|\\d+\\.\\d+)'
   }
 }
 
-bintray {
+/*bintray {
   user = project.hasProperty('bintrayUser') ? bintrayUser : ''
   key = project.hasProperty('bintrayApiKey') ? bintrayApiKey : ''
   pkg {
@@ -76,9 +94,9 @@ bintray {
     }
   }
   publish = false
-}
+}*/
 
-artifactory {
+/*artifactory {
   contextUrl = 'https://oss.jfrog.org'
   publish {
     repository {
@@ -96,6 +114,6 @@ artifactory {
   }
 }
 
-afterReleaseBuild.dependsOn bintrayUpload
+afterReleaseBuild.dependsOn bintrayUpload*/
 
 wrapper.gradleVersion = '1.12'

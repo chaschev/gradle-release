@@ -10,6 +10,7 @@
 
 package net.researchgate.release
 
+import honey.vcs.git.MavenPublishTask
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -53,6 +54,7 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
                 "${p}checkSnapshotDependencies" as String,
                 "${p}updateResources" as String,
                 "${p}runBuildTasks" as String,
+                "${p}publishToGit" as String,
                 "${p}preTagCommit" as String,
                 "${p}createReleaseTag" as String,
                 "${p}checkoutMergeFromReleaseBranch" as String,
@@ -85,6 +87,10 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
 
         project.task('updateResources', group: RELEASE_GROUP,
             description: 'Updates runtime resources required by the honey-mouth') doLast this.&updateResources
+
+        project.task('publishToGit', group: RELEASE_GROUP,
+          description: 'Publishes artifact to a Git repository, easy-peasy') doLast this.&publishToGit
+
 
         project.task('runBuildTasks', group: RELEASE_GROUP,
             description: 'Runs the build process in a separate gradle run.', type: GradleBuild) {
@@ -126,7 +132,8 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
             project.tasks.checkSnapshotDependencies.mustRunAfter(project.tasks.confirmReleaseVersion)
             project.tasks.updateResources.mustRunAfter(project.tasks.checkSnapshotDependencies)
             project.tasks.runBuildTasks.mustRunAfter(project.tasks.updateResources)
-            project.tasks.preTagCommit.mustRunAfter(project.tasks.runBuildTasks)
+            project.tasks.publishToGit.mustRunAfter(project.tasks.runBuildTasks)
+            project.tasks.preTagCommit.mustRunAfter(project.tasks.publishToGit)
             project.tasks.createReleaseTag.mustRunAfter(project.tasks.preTagCommit)
             project.tasks.checkoutMergeFromReleaseBranch.mustRunAfter(project.tasks.createReleaseTag)
             project.tasks.updateVersion.mustRunAfter(project.tasks.checkoutMergeFromReleaseBranch)
@@ -134,6 +141,7 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
         }
 
         project.tasks.updateResources.dependsOn(project.tasks.createScmAdapter, project.tasks.initScmAdapter)
+        project.tasks.publishToGit.dependsOn(project.tasks.runBuildTasks)
 
         project.task('beforeReleaseBuild', group: RELEASE_GROUP,
             description: 'Runs immediately before the build when doing a release') {}
@@ -250,6 +258,16 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
         }
 
         new File("src/main/resources/jars").write(s)
+    }
+
+    void publishToGit() {
+        if(!extension.publishToGit) return
+
+        if(extension.gitRepoUrl == null) throw new Exception("you need to set gitRepoUrl")
+
+        def publishTask = new MavenPublishTask(extension.gitRepoUrl, project)
+
+        publishTask.publishToGit()
     }
 
     void commitTag() {

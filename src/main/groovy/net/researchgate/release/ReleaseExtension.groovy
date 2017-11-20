@@ -30,7 +30,9 @@ class ReleaseExtension {
 
     boolean revertOnFail = true
 
-//    boolean publishToGit = true
+    boolean publishToGit = false
+
+    String gitRepoUrl = null
 
     String preCommitText = ''
 
