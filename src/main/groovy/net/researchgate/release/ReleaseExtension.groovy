@@ -24,7 +24,7 @@ class ReleaseExtension {
 
     boolean failOnSnapshotDependencies = true
 
-    boolean failOnUnversionedFiles = true
+    boolean failOnUnversionedFiles = false
 
     boolean failOnUpdateNeeded = true
 
