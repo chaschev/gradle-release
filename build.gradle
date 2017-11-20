@@ -4,6 +4,7 @@ buildscript {
 
     maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
     maven { url 'https://raw.github.com/chaschev/kgit/repository' }
+    maven { url 'https://raw.github.com/chaschev/gradle-release/repository' }
   }
   dependencies {
     classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.3.0'
