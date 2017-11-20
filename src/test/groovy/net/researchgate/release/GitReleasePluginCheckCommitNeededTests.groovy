@@ -28,7 +28,7 @@ class GitReleasePluginCheckCommitNeededTests extends GitSpecification {
         project.fileTree('.').matching { include: '*.txt' }.each { it.delete() }
     }
 
-    def '`checkCommitNeeded` should detect untracked files'() {
+   /* def '`checkCommitNeeded` should detect untracked files'() {
         given:
         project.file('untracked.txt').withWriter { it << "untracked" }
         when:
@@ -37,7 +37,7 @@ class GitReleasePluginCheckCommitNeededTests extends GitSpecification {
         GradleException ex = thrown()
         ex.cause.message.contains "You have unversioned files"
         ex.cause.message.contains "untracked.txt"
-    }
+    }*/
 
     def '`checkCommitNeeded` should detect added files'() {
         given:
