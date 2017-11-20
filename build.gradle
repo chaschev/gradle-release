@@ -71,6 +71,8 @@ release {
   git {
     publishToGit = true
 
+    failOnUnversionedFiles = false
+
     gitRepoUrl = "https://github.com/chaschev/gradle-release.git"
 
     requireBranch = '(master|\\d+\\.\\d+)'
