@@ -245,7 +245,13 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
 
         installKtsFile.write(installKts)
 
-        def s = "# Repos\n"
+        def s = ""
+
+        s += "# My Repo\n"
+
+        s += (extension.gitAccessRepoUrl ?: "http://central.maven.org/maven2") + "\n"
+
+        s += "# Repos\n"
 
         project.repositories.toSet().each {
             s += "${it.url}\n"

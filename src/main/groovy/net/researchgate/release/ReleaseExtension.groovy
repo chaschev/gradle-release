@@ -34,6 +34,8 @@ class ReleaseExtension {
 
     String gitRepoUrl = null
 
+    String gitAccessRepoUrl = null
+
     String preCommitText = ''
 
     String preTagCommitMessage = '[Gradle Release Plugin] - pre tag commit: '
