@@ -247,6 +247,10 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
 
         def s = ""
 
+        s += "# Me\n"
+
+        s += "$project.group:$project.name:$project.version\n"
+
         s += "# My Repo\n"
 
         s += (extension.gitAccessRepoUrl ?: "http://central.maven.org/maven2") + "\n"
@@ -263,7 +267,7 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
             s += artifact.moduleVersion.toString() + "\n"
         }
 
-        new File("src/main/resources/jars").write(s)
+        new File("src/main/resources/mySpecialPom").write(s)
     }
 
     void publishToGit() {
