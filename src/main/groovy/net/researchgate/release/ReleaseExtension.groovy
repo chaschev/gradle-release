@@ -18,133 +18,135 @@ import java.util.regex.Pattern
 
 class ReleaseExtension {
 
-    boolean failOnCommitNeeded = true
+  boolean failOnCommitNeeded = true
 
-    boolean failOnPublishNeeded = true
+  boolean failOnPublishNeeded = true
 
-    boolean failOnSnapshotDependencies = true
+  boolean failOnSnapshotDependencies = true
 
-    boolean failOnUnversionedFiles = false
+  boolean failOnUnversionedFiles = false
 
-    boolean failOnUpdateNeeded = true
+  boolean failOnUpdateNeeded = true
 
-    boolean revertOnFail = true
+  boolean revertOnFail = true
 
-    boolean publishToGit = false
+  boolean publishToGit = false
 
-    String gitRepoUrl = null
+  String gitRepoUrl = null
 
-    String gitAccessRepoUrl = null
+  String gitAccessRepoUrl = null
 
-    String preCommitText = ''
+  Map<String, String> buildProps = null
 
-    String preTagCommitMessage = '[Gradle Release Plugin] - pre tag commit: '
+  String preCommitText = ''
 
-    String tagCommitMessage = '[Gradle Release Plugin] - creating tag: '
+  String preTagCommitMessage = '[Gradle Release Plugin] - pre tag commit: '
 
-    String newVersionCommitMessage = '[Gradle Release Plugin] - new version commit: '
+  String tagCommitMessage = '[Gradle Release Plugin] - creating tag: '
 
-    def pushReleaseVersionBranch = false
+  String newVersionCommitMessage = '[Gradle Release Plugin] - new version commit: '
 
-    /**
-     * as of 3.0 set this to "$version" by default
-     */
-    String tagTemplate
+  def pushReleaseVersionBranch = false
 
-    String versionPropertyFile = 'gradle.properties'
+  /**
+   * as of 3.0 set this to "$version" by default
+   */
+  String tagTemplate
 
-    List versionProperties = []
+  String versionPropertyFile = 'gradle.properties'
 
-    List buildTasks = ['build']
+  List versionProperties = []
 
-    Map<String, Closure<String>> versionPatterns = [
-        // Increments last number: "2.5-SNAPSHOT" => "2.6-SNAPSHOT"
-        /(\d+)([^\d]*$)/: { Matcher m, Project p -> m.replaceAll("${(m[0][1] as int) + 1}${m[0][2]}") }
-    ]
+  List buildTasks = ['build']
 
-    List<Class<? extends BaseScmAdapter>> scmAdapters = [
-        GitAdapter,
-        SvnAdapter,
-        HgAdapter,
-        BzrAdapter
-    ];
+  Map<String, Closure<String>> versionPatterns = [
+    // Increments last number: "2.5-SNAPSHOT" => "2.6-SNAPSHOT"
+    /(\d+)([^\d]*$)/: { Matcher m, Project p -> m.replaceAll("${(m[0][1] as int) + 1}${m[0][2]}") }
+  ]
 
-    private Project project
-    private Map<String, Object> attributes
+  List<Class<? extends BaseScmAdapter>> scmAdapters = [
+    GitAdapter,
+    SvnAdapter,
+    HgAdapter,
+    BzrAdapter
+  ];
 
-    ReleaseExtension(Project project, Map<String, Object> attributes) {
-        this.attributes = attributes
-        this.project = project
-        ExpandoMetaClass mc = new ExpandoMetaClass(ReleaseExtension, false, true)
-        mc.initialize()
-        metaClass = mc
+  private Project project
+  private Map<String, Object> attributes
+
+  ReleaseExtension(Project project, Map<String, Object> attributes) {
+    this.attributes = attributes
+    this.project = project
+    ExpandoMetaClass mc = new ExpandoMetaClass(ReleaseExtension, false, true)
+    mc.initialize()
+    metaClass = mc
+  }
+
+  def propertyMissing(String name) {
+    if (isDeprecatedOption(name)) {
+      def value = null
+      if (name == 'includeProjectNameInTag') {
+        value = false
+      }
+
+      return metaClass."$name" = value
+    }
+    BaseScmAdapter adapter = getAdapterForName(name)
+    Object result = adapter?.createNewConfig()
+
+    if (!adapter || !result) {
+      throw new MissingPropertyException(name, this.class)
     }
 
-    def propertyMissing(String name) {
-        if (isDeprecatedOption(name)) {
-            def value = null
-            if (name == 'includeProjectNameInTag') {
-                value = false
-            }
+    metaClass."$name" = result
+  }
 
-            return metaClass."$name" = value
-        }
-        BaseScmAdapter adapter = getAdapterForName(name)
-        Object result = adapter?.createNewConfig()
+  def propertyMissing(String name, value) {
+    if (isDeprecatedOption(name)) {
+      project.logger?.warn("You are setting the deprecated option '${name}'. The deprecated option will be removed in 3.0")
+      project.logger?.warn("Please upgrade your configuration to use 'tagTemplate'. See https://github.com/researchgate/gradle-release/blob/master/UPGRADE.md#migrate-to-new-tagtemplate-configuration")
 
-        if (!adapter || !result) {
-            throw new MissingPropertyException(name, this.class)
-        }
+      return metaClass."$name" = value
+    }
+    BaseScmAdapter adapter = getAdapterForName(name)
 
-        metaClass."$name" = result
+    if (!adapter) {
+      throw new MissingPropertyException(name, this.class)
+    }
+    metaClass."$name" = value
+  }
+
+  def methodMissing(String name, args) {
+    metaClass."$name" = { Closure varClosure ->
+      return ConfigureUtil.configure(varClosure, this."$name")
     }
 
-    def propertyMissing(String name, value) {
-        if (isDeprecatedOption(name)) {
-            project.logger?.warn("You are setting the deprecated option '${name}'. The deprecated option will be removed in 3.0")
-            project.logger?.warn("Please upgrade your configuration to use 'tagTemplate'. See https://github.com/researchgate/gradle-release/blob/master/UPGRADE.md#migrate-to-new-tagtemplate-configuration")
+    try {
+      return ConfigureUtil.configure(args[0] as Closure, this."$name")
+    } catch (MissingPropertyException ignored) {
+      throw new MissingMethodException(name, this.class, args)
+    }
+  }
 
-            return metaClass."$name" = value
-        }
-        BaseScmAdapter adapter = getAdapterForName(name)
+  private boolean isDeprecatedOption(String name) {
+    name == 'includeProjectNameInTag' || name == 'tagPrefix'
+  }
 
-        if (!adapter) {
-            throw new MissingPropertyException(name, this.class)
-        }
-        metaClass."$name" = value
+  private BaseScmAdapter getAdapterForName(String name) {
+    BaseScmAdapter adapter = null
+    scmAdapters.find {
+      assert BaseScmAdapter.isAssignableFrom(it)
+
+      Pattern pattern = Pattern.compile("^${name}", Pattern.CASE_INSENSITIVE);
+      if (!pattern.matcher(it.simpleName).find()) {
+        return false
+      }
+
+      adapter = it.getConstructor(Project.class, Map.class).newInstance(project, attributes)
+
+      return true
     }
 
-    def methodMissing(String name, args) {
-        metaClass."$name" = { Closure varClosure ->
-            return ConfigureUtil.configure(varClosure, this."$name")
-        }
-
-        try {
-            return ConfigureUtil.configure(args[0] as Closure, this."$name")
-        } catch (MissingPropertyException ignored) {
-            throw new MissingMethodException(name, this.class, args)
-        }
-    }
-
-    private boolean isDeprecatedOption(String name) {
-        name == 'includeProjectNameInTag' || name == 'tagPrefix'
-    }
-
-    private BaseScmAdapter getAdapterForName(String name) {
-        BaseScmAdapter adapter = null
-        scmAdapters.find {
-            assert BaseScmAdapter.isAssignableFrom(it)
-
-            Pattern pattern = Pattern.compile("^${name}", Pattern.CASE_INSENSITIVE);
-            if (!pattern.matcher(it.simpleName).find()) {
-                return false
-            }
-
-            adapter = it.getConstructor(Project.class, Map.class).newInstance(project, attributes)
-
-            return true
-        }
-
-        adapter
-    }
+    adapter
+  }
 }

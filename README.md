@@ -26,6 +26,11 @@ The `gradle release` task defines the following as the default release process:
 
 Current SCM support: [Bazaar](http://bazaar.canonical.com/en/), [Git](http://git-scm.com/) (1.7.2 or newer), [Mercurial](http://mercurial.selenic.com/), and [Subversion](http://subversion.apache.org/)
 
+## Andlee's Usage Advice
+
+* Omit full release cycle - it is boring and unstable
+* Use this cycle: make a change, bump version, publish to maven local, test, publish to git, use 
+
 ## Installation
 
 The gradle-release plugin will work with Gradle 1.0M3 and beyond

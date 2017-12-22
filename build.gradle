@@ -1,18 +1,19 @@
 buildscript {
   repositories {
+    maven { url 'https://raw.github.com/chaschev/gradle-release/repository' }
+
     jcenter()
-//    mavenLocal()
+    mavenLocal()
 
     maven { url 'http://dl.bintray.com/kotlin/kotlin-eap-1.2' }
     maven { url 'https://raw.github.com/chaschev/kgit/repository' }
-    maven { url 'https://raw.github.com/chaschev/gradle-release/repository' }
   }
   dependencies {
     classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.3.0'
     classpath 'nu.studer:gradle-plugindev-plugin:1.0.4'
     classpath 'org.codehaus.groovy:groovy-backports-compat23:2.4.6'
-    classpath 'net.researchgate:gradle-release:2.7.4'
-    classpath "honey:kgit:0.1.5"
+    classpath 'net.researchgate:gradle-release:2.7.5'
+    classpath "honey:kgit:0.1.8"
 
   }
 }
@@ -26,7 +27,7 @@ apply plugin: 'net.researchgate.release'
 group = 'net.researchgate'
 
 dependencies {
-  compile "honey:kgit:0.1.5"
+  compile "honey:kgit:0.1.8"
 
   testCompile("org.spockframework:spock-core:$spockVersion") { exclude group: 'org.codehaus.groovy' }
   testCompile "junit:junit:$junitVersion"
@@ -76,6 +77,11 @@ release {
     gitRepoUrl = "https://github.com/chaschev/gradle-release.git"
 
     gitAccessRepoUrl = "https://raw.github.com/chaschev/gradle-release/repository"
+
+    buildProps = [
+      some: 'other',
+      everyone: 'love'
+    ]
 
     requireBranch = 'master'
   }
