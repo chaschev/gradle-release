@@ -243,6 +243,9 @@ class ReleasePlugin extends PluginHelper implements Plugin<Project> {
         def resourcesDir = project.file("src/main/resources")
         def revision = scmAdapter.getRevision().substring(0, 6)
 
+        if(!resourcesDir.exists()){
+            resourcesDir.mkdirs()
+        }
         /*def installKtsFile = new File(resourcesDir, "install.kts")
         def installKts = installKtsFile.text
 
