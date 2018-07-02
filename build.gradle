@@ -12,7 +12,7 @@ buildscript {
     classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.3.0'
     classpath 'nu.studer:gradle-plugindev-plugin:1.0.4'
     classpath 'org.codehaus.groovy:groovy-backports-compat23:2.4.6'
-    classpath 'net.researchgate:gradle-release:2.7.5'
+    classpath 'net.researchgate:gradle-release:2.7.8'
     classpath "honey:kgit:0.1.8"
 
   }
@@ -36,6 +36,7 @@ dependencies {
 }
 
 repositories {
+  mavenLocal()
   mavenCentral()
   jcenter()
   maven { url 'https://raw.github.com/chaschev/kgit/repository' }
